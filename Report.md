@@ -127,6 +127,89 @@ numbers worked out by hand, and there is a test suite covering the row counts,
 the links between tables, the response and treatment rule, and the safe re-run.
 Part 1 is solid and ready to build on.
 
-## Parts 2 to 4 and the dashboard
+## Part 2: Initial Analysis, Data Overview
+
+Bob's first question is the simplest and the most important one to get right:
+for any given sample, what is the makeup of immune cells. Not the raw counts,
+the proportions. He wants to be able to say a sample is roughly a quarter CD8 T
+cells and a tenth B cells, so that two samples can be compared on the same
+footing even if one was larger than the other.
+
+### Why proportions and not raw counts
+
+The five columns in the file are absolute counts, and every sample was collected
+and processed a little differently, so one sample might total 93,000 cells and
+another 60,000. If I compared raw B cell counts between them, I would mostly be
+measuring how many cells happened to be collected, not the patient's immune
+makeup. Converting each population to a percentage of its own sample's total
+removes that effect and makes samples comparable. That conversion is the whole
+job of Part 2.
+
+### What I built
+
+The output is a long table, one row per population per sample, with exactly the
+columns Bob asked for: sample, total_count, population, count, and percentage.
+For each sample I sum the five populations to get the total, then each
+percentage is that population's count divided by the total, times one hundred.
+Across the whole dataset that is 10,500 samples times five populations, so
+52,500 rows. The total repeats across a sample's five rows, which is normal and
+correct for this shape.
+
+The program builds this table, writes the full version to a CSV, prints a short
+preview so the terminal stays readable, and hands the table back so the
+dashboard can show it later. As a quick check, sample00000 comes out as 11.70
+percent B cells, 26.22 percent CD8 T, 21.98 percent CD4 T, 14.87 percent NK, and
+25.22 percent monocyte, which sums back to one hundred.
+
+### The decision that keeps the parts honest
+
+I did not write a new calculation for this. In Part 1 I had already created a
+database view that computes exactly this, so Part 2 reads from that one view
+rather than recomputing the numbers a second way. This matters more than it
+sounds. If the calculation lived in two places, the CSV and the dashboard could
+one day disagree over a rounding rule or a fix applied to only one of them. With
+a single definition in the database, the number Bob sees in the dashboard is the
+same number in the file, always. While doing this I also removed an earlier
+throwaway version of the same calculation, so relative frequency is now defined
+in exactly one place.
+
+### Getting precision right
+
+One subtle thing I tightened up here. Originally the view rounded the percentage
+as it stored it, which meant each sample's five percentages added up to
+99.9998 or 100.0002 rather than a clean one hundred, because the rounding
+happened too early and the lost detail could not be recovered. I changed it so
+the database keeps the full precision number, and rounding to two decimals
+happens only at the moment a person reads the table. Now the underlying
+percentages sum to exactly one hundred, and the two decimal figures are purely
+a display choice. Rounding late instead of early is a small change that makes
+the numbers trustworthy.
+
+One naming note for the team: the table has a column literally called count,
+which is also a SQL keyword. I kept the name because Bob's specification asks
+for it, and the database handles it correctly. I am flagging it so it reads as a
+deliberate choice rather than an oversight.
+
+### A bug worth mentioning
+
+While hardening the tests I added one for the edge case of a sample whose counts
+are all zero. That test immediately caught a real problem: the code tried to
+round a percentage that was empty for such a sample and would have crashed. The
+database was already handling the zero total safely by returning an empty
+percentage, but the display code was not ready for it. I fixed the display code
+to treat an empty percentage as blank rather than choke on it. The real data has
+no such sample, so nothing was broken in practice, but if Bob ever loads an
+unusual sample the program now handles it cleanly instead of failing.
+
+### Where it ended up
+
+The summary reads straight from the database view, produces the exact table Bob
+asked for, writes it to a CSV, and returns it for the dashboard. It is covered
+by tests for the row count, the exact columns and their order, a known sample's
+values, the percentages summing to one hundred, the CSV output, a missing
+database, and the all zero sample. Part 2 is done and feeds directly into the
+comparison work in Part 3.
+
+## Parts 3 to 4 and the dashboard
 
 More to come as I finish each one.
