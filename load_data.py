@@ -92,8 +92,8 @@ SELECT
     m.population,
     m.count,
     SUM(m.count) OVER (PARTITION BY m.sample_id) AS total_count,
-    ROUND(100.0 * m.count
-          / NULLIF(SUM(m.count) OVER (PARTITION BY m.sample_id), 0), 4) AS percentage
+    100.0 * m.count
+        / NULLIF(SUM(m.count) OVER (PARTITION BY m.sample_id), 0) AS percentage
 FROM measurement m
 JOIN sample s ON s.sample_id = m.sample_id;
 
