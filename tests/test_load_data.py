@@ -94,3 +94,46 @@ def test_multi_treatment_subject_rejected(tmp_path: Path) -> None:
     pd.DataFrame([row_a, row_b]).to_csv(path, index=False)
     with pytest.raises(ValueError, match="more than one treatment"):
         load_data.build_database(path, tmp_path / "multi.db")
+
+
+def test_check_rejects_response_without_treatment(db: Path) -> None:
+    conn = sqlite3.connect(db)
+    try:
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(
+                "INSERT INTO treatment_episode (subject_id, treatment, response) "
+                "VALUES (1, 'none', 'yes')"
+            )
+    finally:
+        conn.close()
+
+
+def test_check_rejects_treated_with_null_response(db: Path) -> None:
+    conn = sqlite3.connect(db)
+    try:
+        # Pick an untreated subject, so inserting a treated episode for it does
+        # not collide with UNIQUE(subject_id, treatment). The rejection then
+        # comes from the CHECK: a treated episode may not have a NULL response.
+        subject_id = conn.execute(
+            "SELECT subject_id FROM treatment_episode WHERE treatment = 'none' LIMIT 1"
+        ).fetchone()[0]
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(
+                "INSERT INTO treatment_episode (subject_id, treatment, response) "
+                "VALUES (?, 'miraclib', NULL)",
+                (subject_id,),
+            )
+    finally:
+        conn.close()
+
+
+def test_inconsistent_response_rejected(tmp_path: Path) -> None:
+    import pandas as pd
+
+    base = pd.read_csv(CSV).iloc[0].to_dict()
+    row_a = dict(base, sample="s_a", treatment="miraclib", response="yes")
+    row_b = dict(base, sample="s_b", treatment="miraclib", response="no")
+    path = tmp_path / "response.csv"
+    pd.DataFrame([row_a, row_b]).to_csv(path, index=False)
+    with pytest.raises(ValueError, match="inconsistent attributes"):
+        load_data.build_database(path, tmp_path / "response.db")

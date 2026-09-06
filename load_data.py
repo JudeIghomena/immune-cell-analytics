@@ -45,8 +45,6 @@ REQUIRED_COLUMNS = (
 )
 
 SCHEMA = """
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE project (
     project_id   INTEGER PRIMARY KEY,
     project_code TEXT NOT NULL UNIQUE
@@ -65,8 +63,10 @@ CREATE TABLE treatment_episode (
     episode_id INTEGER PRIMARY KEY,
     subject_id INTEGER NOT NULL REFERENCES subject(subject_id),
     treatment  TEXT NOT NULL CHECK (treatment IN ('miraclib','phauximab','none')),
-    response   TEXT CHECK (response IN ('yes','no')),
-    UNIQUE (subject_id, treatment)
+    response   TEXT,
+    UNIQUE (subject_id, treatment),
+    CHECK ((treatment = 'none' AND response IS NULL)
+        OR (treatment <> 'none' AND response IS NOT NULL AND response IN ('yes','no')))
 );
 
 CREATE TABLE sample (
@@ -134,7 +134,9 @@ def read_and_validate(csv_path: Path) -> pd.DataFrame:
             f"Subjects with more than one treatment are not supported: {offenders[:5]}"
         )
 
-    static_cols = ["project", "condition", "sex", "age"]
+    # nunique ignores NaN by default, so an untreated subject whose response is
+    # blank in every row counts as zero distinct values, not an inconsistency.
+    static_cols = ["project", "condition", "sex", "age", "response"]
     varying = df.groupby("subject")[static_cols].nunique()
     inconsistent = varying[(varying > 1).any(axis=1)].index.tolist()
     if inconsistent:
