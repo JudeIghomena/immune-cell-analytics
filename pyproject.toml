@@ -1,0 +1,48 @@
+[project]
+name = "immune-cell-analytics"
+version = "0.1.0"
+description = "Immune Cell Analytics: relative-frequency summaries and responder analysis of immune cell population counts."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Jude Ighomena" }]
+dependencies = [
+    "pandas>=2.0",
+]
+
+[project.optional-dependencies]
+analysis = [
+    "matplotlib>=3.7",
+    "scipy>=1.10",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "pandas-stubs",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, isort, pyupgrade, bugbear, comprehensions
+select = ["E", "F", "I", "UP", "B", "C4"]
+
+[tool.mypy]
+python_version = "3.10"
+packages = ["immune_cell_analytics"]
+mypy_path = "src"
+strict = true
