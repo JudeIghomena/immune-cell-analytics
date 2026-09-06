@@ -29,3 +29,6 @@ coverage.xml
 outputs/
 *.png
 !docs/**/*.png
+
+# Generated SQLite database (built by load_data.py)
+*.db
