@@ -296,6 +296,53 @@ observational comparison, so even the CD4 signal is an association, not proof
 that the drug drives it. I would rather hand Bob an honest lead than a
 confident but fragile claim.
 
-## Part 4 and the dashboard
+## Part 4: Data Subset Analysis
 
-More to come as I finish each one.
+Bob wanted to look at a specific slice of the trial to understand early
+treatment effects, so this part queries the database and filters down to one
+well-defined group, then describes who is in it. It is not new analysis, it is
+careful counting, and the value is in getting the definitions exactly right.
+
+### The subset
+
+I filtered to melanoma patients treated with miraclib, PBMC samples, at
+baseline, meaning day 0. That gives 656 samples. Because baseline is one sample
+per patient, that is also 656 patients. This is the same starting group as the
+prediction analysis in Part 3, and I deliberately defined that group in a single
+place in the code so the two parts can never drift apart on what the cohort
+means.
+
+### Who is in it
+
+I broke the group down three ways.
+
+By project, counting samples: 384 come from project one and 272 from project
+three. Project two contributes none to this group, which is expected, it simply
+has no melanoma miraclib PBMC baseline samples, and I note it so nobody wonders
+where it went.
+
+By response, counting patients: 331 responders and 325 non-responders, an almost
+even split, which is convenient because it means later comparisons are not
+skewed by one group being much larger.
+
+By sex, counting patients: 344 males and 312 females.
+
+One detail I was careful about: the question asks for samples per project but
+patients by response and by sex. Those are different units. At baseline they
+happen to be one and the same, since each patient has a single sample, but I
+counted them the way the question asked, samples where it says samples and
+distinct patients where it says patients, so the code stays correct even if the
+filter later changed to include more timepoints.
+
+### A data integrity note
+
+While working through this part I noticed the brief referred to a treatment
+called quintazide. That name does not appear anywhere in the dataset. The only
+treatments present are miraclib, phauximab, and none, and I confirmed quintazide
+is absent from every row of the source file and the database. I did not
+introduce it into any result, because reporting a drug that is not in the data
+would be misleading. Flagging it here so the discrepancy is on the record.
+
+## The dashboard
+
+More to come once it is built.
