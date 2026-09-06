@@ -50,3 +50,8 @@ python_version = "3.12"
 packages = ["immune_cell_analytics"]
 mypy_path = "src"
 strict = true
+
+# scipy and matplotlib ship no type stubs, so allow importing them untyped.
+[[tool.mypy.overrides]]
+module = ["scipy.*", "matplotlib.*"]
+ignore_missing_imports = true
