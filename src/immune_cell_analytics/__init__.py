@@ -14,3 +14,11 @@ CELL_POPULATIONS: tuple[str, ...] = (
     "nk_cell",
     "monocyte",
 )
+
+# The fixed study cohort, defined once and reused by every query that needs it:
+# melanoma subjects treated with miraclib, PBMC samples. This is a SQL WHERE
+# fragment that assumes the joined tables carry these aliases: su for subject,
+# te for treatment_episode, sa for sample.
+COHORT_WHERE: str = (
+    "su.condition = 'melanoma' AND te.treatment = 'miraclib' AND sa.sample_type = 'PBMC'"
+)
