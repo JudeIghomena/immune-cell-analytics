@@ -210,6 +210,92 @@ values, the percentages summing to one hundred, the CSV output, a missing
 database, and the all zero sample. Part 2 is done and feeds directly into the
 comparison work in Part 3.
 
-## Parts 3 to 4 and the dashboard
+## Part 3: Statistical Analysis
+
+Bob wants to know whether the immune cell makeup separates patients who respond
+to miraclib from those who do not, and he needs it solid enough to convince Yah.
+The cohort is fixed: melanoma patients on miraclib, PBMC samples only,
+responders (response yes) against non-responders (response no). That is 656
+patients, and this is where the analysis gets interesting, because how I count
+those patients changes the answer.
+
+### The trap I had to avoid first
+
+Each patient in this cohort gave three samples, at day 0, day 7, and day 14. It
+is tempting to pour all of those samples, 1,968 of them, into a single
+responder versus non-responder test. That would be wrong, and quietly so. Three
+samples from one person are not three independent pieces of evidence, they are
+one person measured three times, so treating them as independent triples the
+apparent sample size and makes p-values look smaller than they should. This is
+called pseudoreplication, and it manufactures findings that are not real.
+
+I proved it on this data rather than just asserting it. For B cells, pooling all
+samples gives a p-value of 0.056, right on the edge of looking significant. The
+moment I collapse each patient to a single value, that same comparison jumps to
+0.35, plainly not significant. The near-hit was an artifact of counting each
+patient three times. So I set the pooled approach aside as unsound.
+
+### How I chose to count patients
+
+I ran the comparison two honest ways. The primary analysis uses baseline only,
+the day 0 sample, one per patient. This is the cleanest possible test and it
+matches the goal of prediction, because a signal you can see before or at the
+start of treatment is what would let Bob predict who will respond. The
+secondary, sensitivity analysis averages each patient across their timepoints
+into one value, which uses all the data without the pseudoreplication problem.
+Two framings, both valid, and I report both.
+
+### How I tested for a difference
+
+Cell frequencies are proportions and are not normally distributed, so I used the
+Mann-Whitney U test, which does not assume a normal distribution, rather than a
+t-test. For every population I report the median of each group, the p-value, and
+an effect size, because a p-value alone does not tell you how big a difference
+is, and a colleague like Yah will rightly ask. Because I am testing five
+populations at once, I also correct for multiple comparisons with the
+Benjamini-Hochberg method, and I rely on the corrected p-values for any claim.
+Testing five things and celebrating the one that comes in under 0.05 is exactly
+how false findings get published.
+
+### What the data actually says
+
+The honest answer is that no immune cell population separates responders from
+non-responders once the statistics are done properly. At baseline nothing comes
+close. In the sensitivity analysis one population, CD4 T cells, stands out as a
+lead, with responders trending higher, but its corrected p-value is about 0.06,
+just short of significance. So I am not going to tell Bob he has a predictor. I
+am going to tell him he has one plausible thread worth a larger study.
+
+That CD4 thread is worth describing carefully, because it only appears when the
+on-treatment samples are included, not at baseline. In plain terms, responders
+and non-responders start out looking the same, and their CD4 fraction drifts
+apart during treatment. That is a difference that emerges as the drug acts,
+which is biologically sensible, but it is a difference observed alongside
+response, not shown to cause it.
+
+### The figures
+
+I made three, each answering a different question. The boxplot Bob asked for
+shows the distribution of each population for responders versus non-responders,
+and the two groups sit almost on top of each other, which is the null result
+made visible. The forest plot shows each population's effect size with a
+confidence interval, and every interval crosses zero, again saying no clear
+separation. The third figure is the one I think tells the real story: the
+trajectory plot follows each population's average over days 0, 7, and 14 for the
+two groups, and in the CD4 panel you can watch the responder line climb away
+from the non-responder line after treatment starts, while at day 0 they are
+together.
+
+### What I would tell Bob and Yah
+
+There is no baseline biomarker in this cohort that predicts miraclib response,
+and the one on-treatment lead, CD4 T cells rising in responders, is suggestive
+but does not survive a fair statistical correction. It is a candidate worth a
+larger, prespecified study, not a result to act on yet. This is an
+observational comparison, so even the CD4 signal is an association, not proof
+that the drug drives it. I would rather hand Bob an honest lead than a
+confident but fragile claim.
+
+## Part 4 and the dashboard
 
 More to come as I finish each one.
