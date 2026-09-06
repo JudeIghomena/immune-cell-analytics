@@ -41,8 +41,11 @@ src = ["src", "tests"]
 # pycodestyle, pyflakes, isort, pyupgrade, bugbear, comprehensions
 select = ["E", "F", "I", "UP", "B", "C4"]
 
+# Target 3.12 semantics so mypy can parse modern third-party type stubs
+# (e.g. numpy's `type` statements). Runtime code stays 3.10-compatible via
+# `from __future__ import annotations`.
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 packages = ["immune_cell_analytics"]
 mypy_path = "src"
 strict = true
