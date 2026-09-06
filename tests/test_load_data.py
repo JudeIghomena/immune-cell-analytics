@@ -82,3 +82,15 @@ def test_idempotent_rerun(tmp_path: Path) -> None:
     first = load_data.build_database(CSV, path)
     second = load_data.build_database(CSV, path)
     assert first == second
+
+
+def test_multi_treatment_subject_rejected(tmp_path: Path) -> None:
+    import pandas as pd
+
+    base = pd.read_csv(CSV).iloc[0].to_dict()
+    row_a = dict(base, sample="s_a", treatment="miraclib")
+    row_b = dict(base, sample="s_b", treatment="phauximab")  # same subject, 2nd treatment
+    path = tmp_path / "multi.csv"
+    pd.DataFrame([row_a, row_b]).to_csv(path, index=False)
+    with pytest.raises(ValueError, match="more than one treatment"):
+        load_data.build_database(path, tmp_path / "multi.db")

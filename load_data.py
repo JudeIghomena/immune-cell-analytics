@@ -123,6 +123,25 @@ def read_and_validate(csv_path: Path) -> pd.DataFrame:
         raise ValueError(f"Missing required columns in {csv_path.name}: {missing}")
     if df["sample"].duplicated().any():
         raise ValueError("Duplicate sample identifiers found in the CSV.")
+
+    # The loader collapses each subject to one row (one treatment episode) and
+    # to one set of static attributes. Fail loudly if the data breaks that,
+    # rather than silently dropping a second treatment or attribute set.
+    multi_treatment = df.groupby("subject")["treatment"].nunique()
+    offenders = multi_treatment[multi_treatment > 1].index.tolist()
+    if offenders:
+        raise ValueError(
+            f"Subjects with more than one treatment are not supported: {offenders[:5]}"
+        )
+
+    static_cols = ["project", "condition", "sex", "age"]
+    varying = df.groupby("subject")[static_cols].nunique()
+    inconsistent = varying[(varying > 1).any(axis=1)].index.tolist()
+    if inconsistent:
+        raise ValueError(
+            f"Subjects with inconsistent attributes across samples: {inconsistent[:5]}"
+        )
+
     return df
 
 
