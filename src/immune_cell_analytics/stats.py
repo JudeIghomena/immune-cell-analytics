@@ -25,7 +25,7 @@ import numpy.typing as npt
 import pandas as pd
 from scipy.stats import mannwhitneyu
 
-from . import CELL_POPULATIONS
+from . import CELL_POPULATIONS, COHORT_WHERE
 
 DEFAULT_DB = Path(__file__).resolve().parents[2] / "cell_count.db"
 
@@ -42,7 +42,9 @@ _Z_95 = 1.96
 
 # Every cohort row, all timepoints, for the fixed melanoma + miraclib + PBMC
 # cohort. The baseline and subject_mean units are derived from this in pandas.
-_COHORT_QUERY = """
+# The cohort filter comes from the shared COHORT_WHERE fragment so it is defined
+# in exactly one place.
+_COHORT_QUERY = f"""
 SELECT
     su.subject_code AS subject,
     v.population,
@@ -53,9 +55,7 @@ FROM sample_population_frequency v
 JOIN sample sa            ON sa.sample_id = v.sample_id
 JOIN treatment_episode te ON te.episode_id = sa.episode_id
 JOIN subject su           ON su.subject_id = te.subject_id
-WHERE su.condition = 'melanoma'
-  AND te.treatment = 'miraclib'
-  AND sa.sample_type = 'PBMC'
+WHERE {COHORT_WHERE}
 """
 
 _STATS_COLUMNS = [
