@@ -23,7 +23,7 @@ dev = [
     "pyyaml>=6.0",
 ]
 dashboard = [
-    "streamlit>=1.36",
+    "streamlit>=1.49",
 ]
 
 [build-system]

@@ -1,0 +1,43 @@
+# Immune cell analytics theme.
+# Adapted from the minimal indigo template, moved to a light base so the
+# matplotlib figures, which have white backgrounds, sit cleanly on the page.
+[theme]
+base = "light"
+primaryColor = "#6366f1"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f5f5f7"
+codeBackgroundColor = "#f5f5f7"
+textColor = "#1f2130"
+linkColor = "#6366f1"
+borderColor = "#e4e4e7"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "8px"
+buttonRadius = "8px"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+codeFontSize = "0.85rem"
+baseFontSize = 15
+baseFontWeight = 400
+headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
+headingFontWeights = [600, 600, 600, 500, 500, 500]
+linkUnderline = false
+chartCategoricalColors = ["#6366f1", "#8b5cf6", "#ec4899", "#14b8a6", "#f59e0b", "#ef4444", "#22c55e"]
+
+# Semantic palette for badges, coloured text, and status.
+violetColor = "#8b5cf6"
+blueColor = "#6366f1"
+greenColor = "#16a34a"
+yellowColor = "#f59e0b"
+orangeColor = "#f97316"
+redColor = "#ef4444"
+grayColor = "#6b7280"
+
+dataframeBorderColor = "#e4e4e7"
+dataframeHeaderBackgroundColor = "#f5f5f7"
+
+[theme.sidebar]
+backgroundColor = "#fafafa"
+secondaryBackgroundColor = "#f0f0f2"
+codeBackgroundColor = "#f0f0f2"
+borderColor = "#e4e4e7"
