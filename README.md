@@ -1,57 +1,57 @@
 # Immune Cell Analytics
 
-This project analyzes immune cell population counts from a clinical trial of
-miraclib in melanoma. It takes one dataset of blood samples, loads it into a
-normalized SQLite database, converts raw cell counts into relative frequencies,
-tests whether immune composition separates treatment responders from
-non-responders, describes a baseline cohort, and serves all of it through an
-interactive dashboard.
+This project looks at immune cell counts from a clinical trial of miraclib in
+melanoma and works out whether the makeup of a patient's immune cells says
+anything about who responds to the drug. It starts from one file of blood
+samples, loads it into a normalized SQLite database, turns the raw cell counts
+into relative frequencies, tests responders against non-responders, describes a
+baseline cohort, and puts all of it behind an interactive dashboard.
 
-The dataset is a single file, cell-count.csv, with 10,500 samples. Each sample
+The data is a single file, cell-count.csv, with 10,500 samples. Every sample
 carries raw integer counts for five immune cell populations, b_cell, cd8_t_cell,
-cd4_t_cell, nk_cell, and monocyte, plus metadata about the subject and the
-sample. The analysis is delivered in four parts plus the dashboard:
+cd4_t_cell, nk_cell, and monocyte, plus some metadata about the subject and the
+sample. I delivered the work in four parts, with a dashboard on top:
 
 1. Data management: the schema and the loader.
 2. Relative frequency: each population as a percent of its sample total.
 3. Statistical analysis: responders versus non-responders on miraclib.
 4. Subset analysis: a baseline melanoma miraclib PBMC cohort, described.
 
-The full analytical narrative, with the reasoning behind each decision and the
-honest conclusions, lives in Report.md.
+This README is the map. If you want the reasoning behind each decision and the
+honest conclusions, that lives in Report.md, where I wrote up my thinking part
+by part.
 
 ## How to run and reproduce
 
-The project is built to run in GitHub Codespaces using three Makefile targets.
-Python 3.10 or newer is required. Run the targets in order.
+I built this to run in GitHub Codespaces with three Makefile targets, so you can
+go from a fresh checkout to a running dashboard without much ceremony. You need
+Python 3.10 or newer. Run the three targets in order, and each one sets up the
+next.
 
-### 1. Install dependencies
+Start by installing the dependencies:
 
 ```bash
 make setup
 ```
 
-This upgrades pip and installs the package in editable mode with its analysis
-and dashboard extras, all declared in pyproject.toml. The analysis extra pulls
-in matplotlib and scipy, and the dashboard extra pulls in streamlit.
+That upgrades pip and installs the package in editable mode with its analysis
+and dashboard extras, all declared in pyproject.toml. The analysis extra brings
+in matplotlib and scipy, and the dashboard extra brings in streamlit.
 
-### 2. Build the database and regenerate every output
+Then build the database and regenerate every output:
 
 ```bash
 make pipeline
 ```
 
-This runs four steps in order and is safe to re-run, since the loader rebuilds a
-clean database each time:
-
-1. `python load_data.py` builds cell_count.db in the repository root and loads
-   every row (3 projects, 3,500 subjects, 3,500 treatment episodes, 10,500
-   samples, 52,500 measurements).
-2. `python -m immune_cell_analytics.analysis` writes the Part 2 relative
-   frequency table.
-3. `python -m immune_cell_analytics.stats` writes the Part 3 statistics tables
-   and figures.
-4. `python -m immune_cell_analytics.subsets` writes the Part 4 subset tables.
+This runs four steps in order, and it is safe to re-run because the loader
+rebuilds a clean database from the CSV each time. First `python load_data.py`
+builds cell_count.db in the repository root and loads every row, 3 projects,
+3,500 subjects, 3,500 treatment episodes, 10,500 samples, and 52,500
+measurements. Then `python -m immune_cell_analytics.analysis` writes the Part 2
+relative frequency table, `python -m immune_cell_analytics.stats` writes the
+Part 3 statistics tables and figures, and `python -m immune_cell_analytics.subsets`
+writes the Part 4 subset tables.
 
 Everything lands in outputs/:
 
@@ -68,7 +68,7 @@ Everything lands in outputs/:
 | subset_by_response.csv | Part 4. Subject counts by response. |
 | subset_by_sex.csv | Part 4. Subject counts by sex. |
 
-### 3. Launch the dashboard
+Finally, launch the dashboard:
 
 ```bash
 make dashboard
@@ -77,9 +77,10 @@ make dashboard
 This starts Streamlit at http://localhost:8501. In Codespaces the port is
 forwarded automatically, so open the forwarded URL when the terminal prints it.
 Run make pipeline at least once first, so the database exists. If it does not,
-the dashboard shows a clear message asking you to run the loader.
+the dashboard shows a clear message asking you to run the loader rather than
+failing on you.
 
-### Optional: run the test suite
+If you want to check the work, the test suite is an optional extra:
 
 ```bash
 pip install -e ".[analysis,dashboard,dev]"
@@ -91,8 +92,9 @@ the statistics, the plots, the subset counts, and the dashboard data helpers.
 
 ## Database schema
 
-The loader decomposes the flat CSV into five tables plus one view. The design is
-normalized so that each fact is stored exactly once.
+I did not load the CSV as one flat table. The loader pulls it apart into five
+tables plus one view, so that each fact is stored exactly once and nothing has
+to be repeated across rows.
 
 ### Tables and relationships
 
@@ -109,10 +111,10 @@ project ──1:N── subject ──1:1── treatment_episode ──1:N─�
 | measurement | one population count in one sample | sample_id, population, count |
 
 A project holds many subjects. Each subject has exactly one treatment episode in
-this dataset, so the relationship is one to one here, though the schema models it
-as one to many so a subject could later carry more than one episode without a
-redesign. An episode holds many samples, one per timepoint. Each sample holds
-five measurements, one per population, stored in long format.
+this dataset, so the relationship is one to one here, but I modeled it as one to
+many so a subject could later carry more than one episode without a redesign. An
+episode holds many samples, one per timepoint, and each sample holds five
+measurements, one per population, stored in long format.
 
 The view sample_population_frequency is the single source of truth for relative
 frequency. It computes, per sample, the total across the five populations and
@@ -120,79 +122,76 @@ each population as a percent of that total, using a window function.
 
 ### Rationale
 
-Normalization so each fact lives once. In the raw CSV every subject attribute is
-repeated across that subject's three sample rows. Repeated facts drift out of
-sync over time and force every query to work around the duplication. Collapsing
-the constant attributes onto subject removes that risk. The constancy was
-verified against the data before the design was fixed, with zero violations.
+Each fact lives in one place. In the raw CSV every subject attribute is repeated
+across that subject's three sample rows, and repeated facts drift out of sync
+over time and force every query to work around the duplication. Collapsing the
+constant attributes onto subject removes that risk. I checked the constancy
+against the data before fixing the design, and there were zero violations.
 
-Response modeled on the treatment episode. Response is the outcome of a course of
-treatment, not a property of a specimen, so it lives on treatment_episode. Once
-it lives there, the blank response for an untreated or healthy subject stops
+Response belongs to the treatment episode, not the sample. Response is the
+outcome of a course of treatment, so I put it on treatment_episode. Once it
+lives there, the blank response for an untreated or healthy subject stops
 looking like missing data and becomes structurally correct: there was no
 treatment, so there is no outcome. A CHECK constraint ties the two together, so
 the database refuses a treated episode with no outcome or an untreated episode
 that claims one.
 
-Long-format measurements. The five counts are stored as five rows per sample
-rather than five columns. This makes the relative frequency summary a single
-grouped query rather than five repeated column references, and it means a future
-sixth population is a new row, not a schema change that ripples through every
-query. A CHECK constraint pins the population name to the five expected values,
-so the openness never lets a typo in. The extra rows cost nothing at this size.
+The five counts are stored long, five rows per sample rather than five columns.
+This makes the relative frequency summary a single grouped query instead of five
+repeated column references, and it means a future sixth population is a new row,
+not a schema change that ripples through every query. A CHECK constraint pins the
+population name to the five expected values, so the openness never lets a typo
+in, and the extra rows cost nothing at this size.
 
-Surrogate keys plus unique natural codes. Every table has a stable integer
-primary key for joins and a UNIQUE constraint on its real-world code
+Every table has a surrogate key and a unique natural code. There is a stable
+integer primary key for joins and a UNIQUE constraint on the real-world code
 (project_code, subject_code, sample_code), so a genuine duplicate is rejected
 outright.
 
-CHECK constraints on real invariants. condition, sex, treatment, and sample_type
-are constrained to their known value sets, counts cannot be negative, age is
-bounded, and the response-to-treatment rule described above is enforced in the
-database, not left to the loader.
+I let the database enforce the real invariants rather than trusting the loader.
+condition, sex, treatment, and sample_type are constrained to their known value
+sets, counts cannot be negative, age is bounded, and the response-to-treatment
+rule described above is enforced in the database itself.
 
-The view as one definition. Relative frequency is defined once in the view and
-read by Part 2 and the dashboard, so the number a reader sees in the file is
+The view is the one definition of relative frequency. It is defined once and read
+by both Part 2 and the dashboard, so the number a reader sees in the file is
 always the same number the dashboard shows. The percentage is stored at full
 precision and rounded only where a human reads it, so per-sample percentages sum
 to exactly one hundred.
 
 ### How this scales
 
-The dataset here is small, but the design is built to grow to hundreds of
-projects and thousands to millions of samples without a rewrite.
+The dataset here is small, but I designed for growth to hundreds of projects and
+thousands to millions of samples without a rewrite.
 
-Indexes on the real paths. Indexes exist only on the columns the analysis
-actually filters and joins on: subject by project and by condition, episode by
-subject and by response, sample by episode, and sample by the sample_type and
-timepoint pair. No index was added on a hunch, because an index nothing uses is
-pure cost.
+I indexed only the real paths, the columns the analysis actually filters and
+joins on: subject by project and by condition, episode by subject and by
+response, sample by episode, and sample by the sample_type and timepoint pair. I
+did not add an index on a hunch, because an index nothing uses is pure cost.
 
-A staged plan by scale:
+From there the plan is staged by scale:
 
-- Small scale (today): the normalized tables plus the targeted indexes above are
-  enough. Cohort queries are fast filtered joins.
-- Millions of rows: materialize the frequency view into a table refreshed by the
-  loader, and add covering indexes for the hottest cohort filters, so the
+- Today, at small scale, the normalized tables plus the targeted indexes above
+  are enough, and cohort queries are fast filtered joins.
+- At millions of rows, materialize the frequency view into a table refreshed by
+  the loader and add covering indexes for the hottest cohort filters, so the
   per-sample window computation is paid once rather than on every read.
-- Tens of millions of rows: partition the measurement table by project or by
+- At tens of millions of rows, partition the measurement table by project or by
   time, so a cohort query touches only the relevant partitions.
 
-Schema evolution without migration. Because measurements are long, a new cell
-population is new rows and a widened CHECK, not an ALTER across every query. New
-per-sample or per-subject metadata is a new column on the table that owns that
-grain, leaving the rest untouched.
+The schema also evolves without migration. Because measurements are long, a new
+cell population is new rows and a widened CHECK, not an ALTER that touches every
+query. New per-sample or per-subject metadata is a new column on the table that
+owns that grain, leaving the rest untouched.
 
-Moving off SQLite when needed. SQLite is the right fit for a single-analyst,
-single-file deliverable. When the workload needs concurrent writers, database
-roles with least privilege, or heavier analytical queries, the same normalized
-schema moves to PostgreSQL with minimal change, gaining materialized views,
-partitioning, and richer indexing.
-
-Arbitrary analytics stay simple. Any new cohort question is a filtered join and
-aggregation over the same normalized core. Where a question is asked often, it
+SQLite is the right fit for a single-analyst, single-file deliverable. When the
+workload needs concurrent writers, database roles with least privilege, or
+heavier analytical queries, the same normalized schema moves to PostgreSQL with
+minimal change and gains materialized views, partitioning, and richer indexing.
+And any new cohort question stays simple, because it is a filtered join and
+aggregation over the same normalized core. Where a question gets asked often, it
 becomes an extra view or a small rollup table, without disturbing the core
-tables or the existing queries.
+tables or the queries that already exist.
 
 ## Code structure
 
@@ -211,50 +210,51 @@ outputs/                             generated CSVs and figures
 Report.md                            the analytical narrative
 ```
 
-load_data.py lives at the repository root and is deliberately self-contained. It
-depends only on pandas and the standard library, so it runs without installing
-the project package, which matters for portable grading. It is idempotent, so
-each run rebuilds a clean database from the CSV. It inserts through parameterized
-statements in one transaction with foreign keys on, and it validates the input
-first, stopping with a clear message on a duplicated sample, a subject with two
-treatments, or a subject whose attributes disagree across rows, rather than
-loading a database that is subtly wrong.
+load_data.py sits at the repository root and I kept it deliberately
+self-contained. It depends only on pandas and the standard library, so it runs
+without installing the project package, which matters for portable grading. It
+is idempotent, so each run rebuilds a clean database from the CSV. It inserts
+through parameterized statements in one transaction with foreign keys on, and it
+validates the input first, stopping with a clear message on a duplicated sample,
+a subject with two treatments, or a subject whose attributes disagree across
+rows, rather than loading a database that is subtly wrong.
 
 The package src/immune_cell_analytics/ holds the analysis, one responsibility per
-module. __init__.py holds shared constants and the single COHORT_WHERE fragment
-that defines the clinical cohort. analysis.py builds the Part 2 relative
-frequency table from the view. stats.py
-runs the Part 3 Mann-Whitney U tests with Benjamini-Hochberg correction and
-effect sizes. plots.py draws the Part 3 figures. subsets.py runs the Part 4
-cohort counts. dashboard_data.py is the tested data-access layer the dashboard
-reads through.
+module. __init__.py holds the shared constants and the single COHORT_WHERE
+fragment that defines the clinical cohort. analysis.py builds the Part 2 relative
+frequency table from the view. stats.py runs the Part 3 Mann-Whitney U tests with
+Benjamini-Hochberg correction and effect sizes. plots.py draws the Part 3
+figures. subsets.py runs the Part 4 cohort counts. dashboard_data.py is the
+tested data-access layer the dashboard reads through.
 
 app.py is a thin presentation layer at the root. It reuses the tested helpers in
 the package rather than recomputing anything, so all of the logic stays under
 test while the app stays a display concern.
 
-Rationale. There is a single source of truth for each computed thing: relative
-frequency is defined once in the SQL view, and the cohort is defined once in
-COHORT_WHERE. Presentation is kept thin so that logic stays tested. The loader is
-self-contained so grading is portable. The modules are small and single-purpose
-so each is easy to read and to test on its own.
+The thread running through all of this is a single source of truth for each
+computed thing. Relative frequency is defined once in the SQL view, and the
+cohort is defined once in COHORT_WHERE. Presentation stays thin so the logic
+stays tested, the loader stays self-contained so grading stays portable, and the
+modules stay small and single-purpose so each one is easy to read and to test on
+its own.
 
 ## The dashboard
 
-The dashboard is served on demand, not hosted separately. Run make dashboard and
-it starts locally at http://localhost:8501. In Codespaces the port is forwarded
-automatically, so open the forwarded URL. It has three tabs: a data overview
-(Part 2), a responder analysis (Part 3), and a subset explorer (Part 4). Sidebar
-cohort filters drive the overview and the subset explorer live. The responder
-analysis stays fixed to the clinical cohort of melanoma, miraclib, and PBMC
-samples, because response only exists for treated subjects and that fixed
-comparison is the scientifically valid question.
+The dashboard is served on demand, not hosted somewhere separately. There is no
+standalone URL to visit. You run make dashboard and it starts locally at
+http://localhost:8501, and in Codespaces the port is forwarded automatically, so
+you open the forwarded URL. It has three tabs: a data overview (Part 2), a
+responder analysis (Part 3), and a subset explorer (Part 4). Sidebar cohort
+filters drive the overview and the subset explorer live. The responder analysis
+stays fixed to the clinical cohort of melanoma, miraclib, and PBMC samples,
+because response only exists for treated subjects and that fixed comparison is
+the scientifically valid question.
 
-## Note on column names
+## A note on column names
 
-The task write-up and the actual data file use different names for three
-columns. This project keeps the real file names and models the extra columns the
-brief does not mention.
+One thing worth flagging early, because it saves confusion later: the task
+write-up and the actual data file use different names for three columns. I kept
+the real file names and modeled the extra columns the brief does not mention.
 
 | Name in the brief | Name in the file |
 |---|---|
@@ -262,15 +262,14 @@ brief does not mention.
 | indication | condition |
 | gender | sex |
 
-The other named columns (treatment, response, time_from_treatment_start) match.
-The file also carries project, subject, age, and sample_type, which the brief
-does not name. All four were kept and modeled. Subject matters most: it
-identifies the repeated samples from one person, which the statistical analysis
-depends on to avoid treating three samples from one subject as three independent
-observations.
+The other named columns (treatment, response, time_from_treatment_start) line
+up. The file also carries project, subject, age, and sample_type, which the
+brief does not name, and I kept and modeled all four. Subject matters the most,
+because it identifies the repeated samples from one person, and the statistical
+analysis depends on that to avoid treating three samples from one subject as
+three independent observations.
 
-One output column is named count, which is also a SQL keyword. It is kept because
-the specification asks for that exact name, and SQLite handles it correctly. It
-is flagged here so it reads as a deliberate choice.
-</content>
-</invoke>
+There is also one output column named count, which happens to be a SQL keyword.
+I kept the name because the specification asks for that exact name and SQLite
+handles it correctly, and I am flagging it here so it reads as a deliberate
+choice rather than an oversight.
