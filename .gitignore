@@ -32,3 +32,7 @@ outputs/
 
 # Generated SQLite database (built by load_data.py)
 *.db
+
+# Skill-system artifacts (not part of the deliverable)
+.agents/
+.claude/skills/
