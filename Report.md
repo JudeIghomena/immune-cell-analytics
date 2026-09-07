@@ -345,4 +345,32 @@ would be misleading. Flagging it here so the discrepancy is on the record.
 
 ## The dashboard
 
-More to come once it is built.
+The last piece is an interactive dashboard, so Bob and Yah can explore the
+analysis themselves without running any code. It is a Streamlit app, and it
+starts with make dashboard, which serves it at localhost:8501 (in Codespaces
+the port is forwarded automatically).
+
+The most important thing about it is what it does not do: it does not recompute
+anything of its own. It reads the same database the pipeline built and calls the
+same functions that sit behind Parts 2 to 4, so a number on the screen is always
+the same number in the report and in the output files. I wanted it to be
+impossible for the dashboard to quietly disagree with the written results, and
+the way to guarantee that is to make it a thin layer over the code that is
+already tested, not a second implementation.
+
+It has three tabs. Data overview is the Part 2 relative frequency table, with a
+search box, filtered by the cohort you choose in the sidebar. Responder analysis
+is the Part 3 comparison: the statistics table, the honest conclusion, and the
+three figures, with a toggle between the baseline and the per-subject-mean
+views. That tab stays fixed to the melanoma miraclib PBMC cohort on purpose,
+because responders only exist for treated patients, so letting the sidebar point
+it at healthy or untreated people would ask a question that has no answer.
+Subset explorer is the Part 4 view: the counts as metric cards and bar charts,
+recomputed live for whatever cohort the sidebar describes.
+
+The sidebar filters, condition, treatment, sample type, and timepoint, drive the
+overview and the subset tabs as you change them, so exploring a different slice
+is immediate. For the look, I stayed with a clean native theme rather than
+hand-written styling, because a dashboard that stays readable and easy to
+maintain is worth more here than one chasing a pixel-perfect design.
+
