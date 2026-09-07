@@ -25,12 +25,10 @@ coverage.xml
 .idea/
 .vscode/
 
-# Generated analysis outputs (kept out of version control by default)
-outputs/
-*.png
-!docs/**/*.png
+# Generated analysis outputs (CSVs and PNGs under outputs/) are tracked so
+# they are part of the submission. The database below stays ignored.
 
-# Generated SQLite database (built by load_data.py)
+# Generated SQLite database (rebuilt by load_data.py / make pipeline)
 *.db
 
 # Skill-system artifacts (not part of the deliverable)
